@@ -1,8 +1,9 @@
 # LoRA Mini Experiment Report
 
-**Project:** `/workspace/lora-mini-experiment`  
+**Project:** [Abchyy/lora-mini-experiment](https://github.com/Abchyy/lora-mini-experiment) (paths below are relative to the repo root)  
 **Date:** 2026-10-01 (Asia/Shanghai, UTC+8)  
-**Recipe source:** `LoRA技术调研报告-v2-2026-10-01.md` §5 (CPU-scaled)
+**Recipe source:** `LoRA技术调研报告-v2-2026-10-01.md` §5 (CPU-scaled)  
+**Published:** https://github.com/Abchyy/lora-mini-experiment (public; sample run committed)
 
 ---
 
@@ -26,7 +27,7 @@ Implement and run a **minimal PEFT LoRA** fine-tune to verify the end-to-end pro
 | Device | **CPU only** (`nvidia-smi` unavailable; `torch.cuda.is_available() == False`) |
 | CPU | 8× Intel Xeon (KVM), x86_64 |
 | RAM | 15.64 GiB total; ~3.8–4.5 GiB available at start |
-| Disk | `/workspace` overlay ~118 GiB free |
+| Disk | Experiment host workspace overlay ~118 GiB free at run time |
 | Python | 3.13.5 |
 | Torch | 2.8.0+cu128 (CPU execution) |
 | Wall-clock (train+eval+save) | **25.71 s** |
@@ -81,7 +82,7 @@ Breakdown (derived): LoRA on 6×{q_lin,v_lin} ≈ 147,456; DistilBERT `pre_class
 
 ## 5. Metrics (this run)
 
-From `/workspace/lora-mini-experiment/results/metrics.json`:
+From `results/metrics.json` (also mirrored in the committed sample log):
 
 | Metric | Value |
 |--------|-------|
@@ -93,8 +94,9 @@ From `/workspace/lora-mini-experiment/results/metrics.json`:
 | `eval_runtime` (s) | 0.87 |
 | Elapsed wall-clock (s) | 25.71 |
 
-Log: `/workspace/lora-mini-experiment/logs/latest.log`  
-Adapter: `/workspace/lora-mini-experiment/results/adapter/`
+Log: `logs/run-20261001-120905.log` (symlink `logs/latest.log` is local-only after a run)  
+Adapter config/tokenizer: `results/adapter/`  
+Adapter weights: regenerate `results/adapter/adapter_model.safetensors` with `bash scripts/run_experiment.sh` (not stored in git)
 
 ---
 
@@ -105,7 +107,7 @@ Adapter: `/workspace/lora-mini-experiment/results/adapter/`
 - PEFT LoRA attaches to DistilBERT when `target_modules=["q_lin","v_lin"]` are set explicitly.  
 - Base weights stay frozen; only LoRA factors + head train (~1.1% of params).  
 - Training loop completes on CPU; loss decreases; adapter + metrics are saved.  
-- Reproduce path in README works with the local venv.
+- Repo-relative runner in `scripts/run_experiment.sh` works from the checkout root.
 
 ### Not strong conclusions (do **not** claim)
 
@@ -118,30 +120,45 @@ Adapter: `/workspace/lora-mini-experiment/results/adapter/`
 
 ## 7. Limitations
 
-1. **CPU-only** box; no GPU timing.  
+1. **CPU-only** host for the sample run; no GPU timing.  
 2. **Tiny subset** — not GLUE leaderboard protocol.  
 3. **Head-heavy trainable count** — DistilBERT `pre_classifier` is large relative to LoRA A/B.  
 4. First install pulled CUDA wheels for torch even though execution is CPU (disk/time cost).  
 5. `accelerate` had to be `>=1.3` for Transformers 4.57 `unwrap_model(..., keep_torch_compile=...)`.  
-6. No paid APIs, but first run needs Hugging Face Hub network access for model/dataset.
+6. No paid APIs, but first run needs Hugging Face Hub network access for model/dataset.  
+7. Adapter **weights** are gitignored; clones must re-run to obtain `.safetensors`.
 
 ---
 
 ## 8. How to reproduce
 
+Start from a clone (do not assume any host-specific path such as `/workspace/...`):
+
 ```bash
-cd /workspace/lora-mini-experiment
+git clone https://github.com/Abchyy/lora-mini-experiment.git
+cd lora-mini-experiment
 python3 -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 bash scripts/run_experiment.sh
 ```
 
-One-liner if venv already exists:
+One-liner if the venv already exists inside the clone:
 
 ```bash
-cd /workspace/lora-mini-experiment && bash scripts/run_experiment.sh
+bash scripts/run_experiment.sh
 ```
+
+### Verification status for these commands
+
+| Step | Status |
+|------|--------|
+| Default training on the original experiment host | **Verified** (metrics above) |
+| Path-independent `ROOT` resolution in `scripts/run_experiment.sh` | **Verified** by script design / that host run |
+| End-to-end `git clone` on a clean second machine | **Not re-verified** after publishing |
+| GPU path / larger env overrides | **Not verified** in the sample run |
+
+See also the table in `README.md` → *Command / path verification status*.
 
 ---
 
@@ -163,16 +180,19 @@ cd /workspace/lora-mini-experiment && bash scripts/run_experiment.sh
 
 ## 10. Deliverables checklist
 
-| Path | Role |
-|------|------|
-| `/workspace/lora-mini-experiment/README.md` | Reproduce instructions |
-| `/workspace/lora-mini-experiment/EXPERIMENT_REPORT.md` | This report |
-| `/workspace/lora-mini-experiment/requirements.txt` | Dependencies |
-| `/workspace/lora-mini-experiment/src/train_lora_sst2.py` | Training entrypoint |
-| `/workspace/lora-mini-experiment/scripts/run_experiment.sh` | End-to-end runner |
-| `/workspace/lora-mini-experiment/results/metrics.json` | Logged metrics |
-| `/workspace/lora-mini-experiment/results/adapter/` | Saved PEFT adapter |
-| `/workspace/lora-mini-experiment/logs/` | stdout/stderr captures |
-| `/workspace/lora-mini-experiment/.gitignore` | Ignores venv/caches/weights |
+| Path (repo-relative) | Role | In git? |
+|----------------------|------|---------|
+| `README.md` | Reproduce instructions | Yes |
+| `EXPERIMENT_REPORT.md` | This report | Yes |
+| `requirements.txt` | Dependencies | Yes |
+| `src/train_lora_sst2.py` | Training entrypoint | Yes |
+| `scripts/run_experiment.sh` | End-to-end runner | Yes |
+| `results/metrics.json` | Logged metrics (sample run) | Yes |
+| `results/run.log` | Sample run stdout copy | Yes |
+| `logs/run-20261001-120905.log` | Sample run log | Yes |
+| `results/adapter/adapter_config.json` + tokenizer files | Adapter metadata | Yes |
+| `results/adapter/adapter_model.safetensors` | Adapter weights | **No** — regenerate |
+| `.venv/`, `hf_cache/`, `outputs/` | Env / cache / checkpoints | **No** — regenerate |
+| `.gitignore` | Ignores venv/caches/weights | Yes |
 
-**No git push performed.**
+**Git status:** Public repository published at https://github.com/Abchyy/lora-mini-experiment (initial sample run pushed; docs updated in follow-up commits).
