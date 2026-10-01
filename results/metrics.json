@@ -1,0 +1,83 @@
+{
+  "experiment": "distilbert-sst2-lora-mini",
+  "started_at": "2026-10-01T12:09:09+08:00",
+  "finished_at": "2026-10-01T12:09:34+08:00",
+  "elapsed_seconds": 25.71,
+  "hardware": {
+    "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
+    "python": "3.13.5",
+    "torch": "2.8.0+cu128",
+    "cuda_available": false,
+    "device": "cpu",
+    "cpu_count": 8,
+    "ram_total_gb": 15.64,
+    "ram_available_gb": 3.82,
+    "gpu_name": null,
+    "gpu_count": 0
+  },
+  "sources": {
+    "model": "distilbert-base-uncased",
+    "dataset": "glue/sst2 (Hugging Face datasets)",
+    "frameworks": {
+      "transformers": "4.57.6",
+      "peft": "0.17.1",
+      "datasets": "3.6.0",
+      "torch": "2.8.0+cu128"
+    },
+    "recipe": "LoRA技术调研报告-v2-2026-10-01.md §5 (CPU-scaled)"
+  },
+  "config": {
+    "r": 8,
+    "lora_alpha": 8,
+    "scaling": 1.0,
+    "use_rslora": false,
+    "lora_dropout": 0.1,
+    "target_modules": [
+      "q_lin",
+      "v_lin"
+    ],
+    "bias": "none",
+    "modules_to_save": [
+      "classifier",
+      "pre_classifier"
+    ],
+    "task_type": "SEQ_CLS",
+    "learning_rate": 0.0005,
+    "num_train_epochs": 2.0,
+    "per_device_train_batch_size": 8,
+    "per_device_eval_batch_size": 16,
+    "max_length": 64,
+    "max_train_samples": 800,
+    "max_eval_samples": 200,
+    "seed": 42
+  },
+  "trainable_parameters": 739586,
+  "total_parameters": 67694596,
+  "trainable_percent": 1.0925,
+  "train_metrics": {
+    "train_runtime": 23.3179,
+    "train_samples_per_second": 68.617,
+    "train_steps_per_second": 8.577,
+    "total_flos": 12244443597312.0,
+    "train_loss": 0.40484086751937864,
+    "epoch": 2.0
+  },
+  "eval_metrics": {
+    "eval_loss": 0.38926994800567627,
+    "eval_accuracy": 0.845,
+    "eval_runtime": 0.8721,
+    "eval_samples_per_second": 229.328,
+    "eval_steps_per_second": 14.906,
+    "epoch": 2.0
+  },
+  "paths": {
+    "adapter_dir": "/workspace/lora-mini-experiment/results/adapter",
+    "output_dir": "/workspace/lora-mini-experiment/outputs/run",
+    "metrics_path": "/workspace/lora-mini-experiment/results/metrics.json"
+  },
+  "interpretation": {
+    "process_verification": true,
+    "strong_conclusions": false,
+    "note": "This run verifies the LoRA+PEFT training pipeline on a tiny SST-2 subset under CPU constraints. Accuracy is not comparable to Hu et al. Table 2 (RoBERTa/DeBERTa full SST-2) and must not be cited as a benchmark claim."
+  }
+}
